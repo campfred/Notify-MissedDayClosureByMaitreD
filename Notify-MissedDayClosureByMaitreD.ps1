@@ -104,11 +104,51 @@ Param (
 	# Titre de l'alerte à envoyer
 	[Parameter(Mandatory = $false)]
 	[ValidateNotNullOrEmpty()]
-	[string] $EmailSubject = "Fermeture manquante pour Maître'D : $((Get-Date ([datetime]$script:ClosingDate)).ToString("d", [CultureInfo] "fr-CA"))",
+	[string] $EmailSubject = "?? Fermeture manquante pour Maître'D : $((Get-Date ([datetime]$script:ClosingDate)).ToString("d", [CultureInfo] "fr-CA"))",
 	
 	# Corps de l'alerte à envoyer
 	[Parameter(Mandatory = $false)]
-	[string] $EmailBody = "La journée du $((Get-Date ([datetime]$script:ClosingDate)).ToString("D", [CultureInfo] "fr-CA")) semble être manquante.`nVérifiez que les tables sont belles et bien fermées puis tentez la fermeture de la journée.`n`nServeur d'origine : $env:ComputerName`nRépertoire d'origine : $($script:Path.FullName)`nDate de fermeture recherchée : $((Get-Date ([datetime]$script:ClosingDate)).ToString("d", [CultureInfo] "fr-CA"))",
+	[string] $EmailBody = @"
+<html>
+
+<head>
+	<link rel="stylesheet" href="https://unpkg.com/purecss@2.0.6/build/pure-min.css" integrity="sha384-Uu6IeWbM+gzNVXJcM9XV3SohHtmWE+3VGi496jvgX1jyvDTXfdK+rfZc8C1Aehk5" crossorigin="anonymous">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body>
+	<h3>$script:EmailSubject</h3>
+	<p>
+		La journée du $((Get-Date ([datetime]$script:ClosingDate)).ToString("D", [CultureInfo] "fr-CA")) semble être manquante.<br />
+		Vérifiez que les tables sont belles et bien fermées puis tentez la fermeture de la journée en suivant la procédure.
+	</p>
+	<h4>Détails de l'événement</h4>
+	<p>
+		<table class="pure-table pure-table-bordered pure-table-striped">
+			<tbody>
+				<tr>
+					<td><b>Serveur d'origine</b></td>
+					<td><a href="rdp://full%20address=s:$(([System.Net.Dns]::GetHostByName($env:COMPUTERNAME)).Hostname):3389&audiomode=i:2&disable%20themes=i:1">$(([System.Net.Dns]::GetHostByName($env:COMPUTERNAME)).Hostname)</a></td>
+				</tr>
+				<tr>
+					<td><b>Répertoire d'origine</b></td>
+					<td>$($script:Path.FullName)</td>
+				</tr>
+				<tr>
+					<td><b>Date de fermeture recherchée</b></td>
+					<td>$((Get-Date ([datetime]$script:ClosingDate)).ToString("d", [CultureInfo] "fr-CA"))</td>
+				</tr>
+			</tbody>
+		</table>
+	</p>
+</body>
+
+</html>
+"@,
+
+	# Contenu du message est HTML
+	[Parameter(Mandatory = $false)]
+	[switch] $EmailBodyIsHTML = ($true),
 
 	# URL de Healthcheck à pinger pour indiquer que le script a roulé
 	[Parameter(Mandatory = $false)]
@@ -124,7 +164,7 @@ function New-ConsoleLine
 function Send-Alert
 {
 	Write-Host "Envoi de la notification d'alerte..."
-	Send-MailMessage -SmtpServer $script:SMTPServer -Port $script:SMTPPort -From $script:EmailFrom -To $script:EmailTo -Subject $script:EmailSubject -Body $script:EmailBody -Priority High -Encoding UTF8
+	Send-MailMessage -SmtpServer $script:SMTPServer -Port $script:SMTPPort -From $script:EmailFrom -To $script:EmailTo -Subject $script:EmailSubject -Body $script:EmailBody -BodyAsHTML -Priority High -Encoding UTF8
 	Write-Host OK
 
 	New-ConsoleLine
