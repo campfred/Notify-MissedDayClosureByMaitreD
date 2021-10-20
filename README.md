@@ -1,4 +1,4 @@
-# Check-MissingDayClosureFromMaitreD
+# Notify-MissedDayClosureByMaitreD
 
 Script PowerShell pour rechercher la présence d'un fichier d'archive produit lors de la fermeture d'une journée dans Maître'D et avertir dans le cas de son absence.
 
@@ -26,13 +26,13 @@ Script PowerShell pour rechercher la présence d'un fichier d'archive produit lo
 
 ### Manuellement ou via script
 
-Lancer le script avec la commande `.\Check-MissingDayClosureFromMaitreD.ps1 -Path . -SMTPServer smtp.local -EmailFrom alerte@smtp.local -EmailTo alertemaitred@smtp.local`.
+Lancer le script avec la commande `.\Notify-MissedDayClosureByMaitreD.ps1 -Path . -SMTPServer smtp.local -EmailFrom alerte@smtp.local -EmailTo alertemaitred@smtp.local`.
 
 > Ajuster les paramètres ainsi que le chemin du script en fonction de l’environnement utilisé.
 
 ### Par tâche planifiée
 
-Lancer le script avec une action de lancement de programmet et utiliser le chemin `powershell -NoProfile -NoLogo -NonInteractive -ExecutionPolicy Bypass -File ".\Check-MissingDayClosureFromMaitreD.ps1" -Path . -SMTPServer smtp.local -EmailFrom alerte@smtp.local -EmailTo alertemaitred@smtp.local` pour l’exécuter.
+Lancer le script avec une action de lancement de programmet et utiliser le chemin `powershell -NoProfile -NoLogo -NonInteractive -ExecutionPolicy Bypass -File ".\Notify-MissedDayClosureByMaitreD.ps1" -Path . -SMTPServer smtp.local -EmailFrom alerte@smtp.local -EmailTo alertemaitred@smtp.local` pour l’exécuter.
 
 > Ajuster les paramètres ainsi que le chemin du script en fonction de l’environnement utilisé.
 
