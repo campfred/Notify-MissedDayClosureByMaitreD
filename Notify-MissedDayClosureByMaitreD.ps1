@@ -200,7 +200,7 @@ function Ping-Healthcheck
 }
 
 [datetime] $ClosingDateAsObject = [datetime] $script:ClosingDate
-Write-Debug "Chemin à surveiller : $script:Path"
+Write-Debug "Chemin à surveiller : $($script:Path.FullName)"
 Write-Debug "Date de fermeture à vérifier : $script:ClosingDateAsObject"
 Write-Debug "Serveur SMTP à utiliser pour alerter : $script:SMTPServer"
 Write-Debug "Port SMTP à utiliser pour alerter : $script:SMTPPort"
@@ -214,32 +214,52 @@ Write-Host "Début du script."
 New-ConsoleLine
 
 Ping-Healthcheck -Start
+Write-Host "Obtention des fichiers dans le répertoire $($script:Path.Name) pour la fermeture du $((Get-Date $script:ClosingDateAsObject).ToString("D", [CultureInfo] "fr-CA"))..."
 try
 {
-	Write-Host "Obtention des fichiers dans le répertoire $($script:Path.Name) pour la fermeture du $((Get-Date $script:ClosingDateAsObject).ToString("D", [CultureInfo] "fr-CA"))..."
-	[System.IO.FileInfo[]] $Archives = Get-ChildItem -Path $script:Path | Where-Object { ($script:ClosingDateAsObject.Date -eq $_.CreationTime.Date) -and ($_.Name -like "$(Get-Date -Date $script:ClosingDateAsObject -Day ($script:ClosingDateAsObject.Day - 1) -Format "yyyyMMdd")*") }
-	Write-Debug "Nombre de fichiers trouvés : $($script:Archives.Length)"
-	if ($script:Archives.Length -gt 0)
-	{
-		# On a trouvé au moins un fichier!
-		Write-Debug "Fichiers trouvés : $script:Archives"
-		Write-Host "Les fichiers semblent exister!"
-		New-ConsoleLine
-	}
-	else
-	{
-		# On a rien trouvé!
-		Write-Error "Aucun fichier n'a été trouvé dans le répertoire $($script:Path.FullName) pour la fermeture du $((Get-Date $script:ClosingDateAsObject).ToString("D", [CultureInfo] "fr-CA"))!"
-		Send-Alert
-		New-ConsoleLine
-	}
-
-	Ping-Healthcheck
+	[System.IO.FileInfo[]] $Archives = Get-ChildItem -Path $script:Path
+	Write-Host "Archives trouvées :"
+	$script:Archives
 }
 catch
 {
+	Write-Error "Erreur lors de l'obtention de la liste complète des archives dans le répertoire.`nRépertoire utilisé : $($script:Path.FullName)"
+
 	Ping-Healthcheck -Fail
+	Exit
 }
+try
+{
+	[System.IO.FileInfo[]] $FilteredArchives = $script:Archives | Where-Object { ($script:ClosingDateAsObject.Date -eq $_.CreationTime.Date) -and ($_.Name -like "$(Get-Date -Date $script:ClosingDateAsObject.AddDays(-1) -Format "yyyyMMdd")*") }
+	Write-Host "Archives après filtrage :"
+	$script:FilteredArchives
+	Write-Host "Nombre de fichiers trouvés : $($script:FilteredArchives.Length)"
+}
+catch
+{
+	Write-Error "Erreur lors du filtrage de la liste d'archives.`nRépertoire utilisé : $($script:Path.FullName)"
+	Write-Host "Archives présentes dans le répertoire :"
+	$script:Archives
+
+	Ping-Healthcheck -Fail
+	Exit
+}
+if ($script:FilteredArchives.Length -gt 0)
+{
+	# On a trouvé au moins un fichier!
+	Write-Debug "Fichiers trouvés : $script:FilteredArchives"
+	Write-Host "Les fichiers semblent exister!"
+	New-ConsoleLine
+}
+else
+{
+	# On a rien trouvé!
+	Write-Error "Aucun fichier n'a été trouvé dans le répertoire $($script:Path.FullName) pour la fermeture du $((Get-Date $script:ClosingDateAsObject).ToString("D", [CultureInfo] "fr-CA"))!"
+	Send-Alert
+	New-ConsoleLine
+}
+
+Ping-Healthcheck
 
 Write-Host "Fin du script."
 Exit
